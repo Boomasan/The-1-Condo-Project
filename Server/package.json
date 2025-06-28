@@ -1,0 +1,23 @@
+{
+  "name": "the-1-condo-project",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Boomasan/The-1-Condo-Project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Boomasan/The-1-Condo-Project/issues"
+  },
+  "homepage": "https://github.com/Boomasan/The-1-Condo-Project#readme",
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

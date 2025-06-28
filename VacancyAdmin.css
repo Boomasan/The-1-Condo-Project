@@ -1,0 +1,99 @@
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #fdf6ee;
+            color: #4e342e;
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #5d4037;
+            margin-bottom: 20px;
+        }
+        .section {
+            background-color: #fff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        input, textarea, select, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input, textarea, select {
+            background-color: #fff9f2;
+        }
+        button {
+            background-color: #8d6e63;
+            color: white;
+            border: none;
+            transition: background 0.3s;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #6d4c41;
+        }
+        .status-button {
+            background-color: #2196F3;
+            margin: 5px;
+            width: auto;
+            display: inline-block;
+        }
+        .status-button:hover {
+            background-color: #1976D2;
+        }
+        .room-card {
+            background-color: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4caf50;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .room-card.unavailable {
+            border-left-color: #f44336;
+        }
+        .room-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .result-box {
+            background-color: #fff9f2;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            display: none;
+        }
+        .message {
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+        }

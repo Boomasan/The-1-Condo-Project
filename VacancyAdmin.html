@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./Rental.css">
+    <title>ระบบจัดการห้องพักให้เช่า</title>
+    <!-- เพิ่ม axios CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.0/axios.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #fdf6ee;
+            color: #4e342e;
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #5d4037;
+            margin-bottom: 20px;
+        }
+        .section {
+            background-color: #fff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        input, textarea, select, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input, textarea, select {
+            background-color: #fff9f2;
+        }
+        button {
+            background-color: #8d6e63;
+            color: white;
+            border: none;
+            transition: background 0.3s;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #6d4c41;
+        }
+        .status-button {
+            background-color: #2196F3;
+            margin: 5px;
+            width: auto;
+            display: inline-block;
+        }
+        .status-button:hover {
+            background-color: #1976D2;
+        }
+        .room-card {
+            background-color: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4caf50;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .room-card.unavailable {
+            border-left-color: #f44336;
+        }
+        .room-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .result-box {
+            background-color: #fff9f2;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            display: none;
+        }
+        .message {
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h2>ระบบจัดการห้องพักให้เช่า</h2>
+    
+    <!-- GET Section -->
+    <div class="section">
+        <h3>ดูข้อมูลห้องพัก</h3>
+        <input type="number" id="getRoomId" placeholder="ID ห้อง (เว้นว่างเพื่อดูทั้งหมด)">
+        <button onclick="getRooms()">ดูข้อมูลห้องพัก</button>
+        <button onclick="getAvailableRooms()" style="background-color: #4caf50;">ดูห้องว่าง</button>
+        <div id="getRooms" class="result-box"></div>
+    </div>
+    
+    <!-- POST Section -->
+    <div class="section">
+        <h3>เพิ่มห้องพักใหม่</h3>
+        <input type="text" id="postRoomName" placeholder="ชื่อห้อง (เช่น 01/11)" required>
+        <textarea id="postRoomDetail" placeholder="รายละเอียดห้อง" rows="3" required></textarea>
+        <input type="url" id="postRoomImage" placeholder="URL รูปภาพห้อง" required>
+        <input type="number" id="postPrice" placeholder="ราคาต่อเดือน" required>
+        <select id="postAvailable">
+            <option value="true">ห้องว่าง</option>
+            <option value="false">ห้องไม่ว่าง</option>
+        </select>
+        <button onclick="addRoom()">เพิ่มห้องพัก</button>
+        <div id="postResult" class="result-box"></div>
+    </div>
+    
+    <!-- PUT Section -->
+    <div class="section">
+        <h3>แก้ไขข้อมูลห้องพัก</h3>
+        <input type="number" id="putRoomId" placeholder="ID ห้องพักที่ต้องการแก้ไข" required>
+        <input type="text" id="putRoomName" placeholder="ชื่อห้องใหม่">
+        <textarea id="putRoomDetail" placeholder="รายละเอียดใหม่" rows="3"></textarea>
+        <input type="url" id="putRoomImage" placeholder="URL รูปภาพใหม่">
+        <input type="number" id="putPrice" placeholder="ราคาใหม่">
+        <select id="putAvailable">
+            <option value="">-- ไม่เปลี่ยนสถานะ --</option>
+            <option value="true">ห้องว่าง</option>
+            <option value="false">ห้องไม่ว่าง</option>
+        </select>
+        <button onclick="updateRoom()">แก้ไขห้องพัก</button>
+        <div id="putResult" class="result-box"></div>
+    </div>
+    
+    <!-- PATCH Section -->
+    <div class="section">
+        <h3>เปลี่ยนสถานะห้อง</h3>
+        <input type="number" id="patchRoomId" placeholder="ID ห้องพัก" required>
+        <button class="status-button" onclick="changeRoomStatus(true)">ทำให้ว่าง</button>
+        <button class="status-button" onclick="changeRoomStatus(false)">ทำให้ไม่ว่าง</button>
+        <div id="patchResult" class="result-box"></div>
+    </div>
+    
+    <!-- DELETE Section -->
+    <div class="section">
+        <h3>ลบห้องพัก</h3>
+        <input type="number" id="deleteRoomId" placeholder="ID ห้องพักที่ต้องการลบ" required>
+        <button onclick="deleteRoom()" style="background-color: #f44336;">ลบห้องพัก</button>
+        <div id="deleteResult" class="result-box"></div>
+    </div>
+    
+    <!-- Room List -->
+    <div class="section">
+        <h3>รายการห้องพักทั้งหมด</h3>
+        <button onclick="showAllRooms()">รีเฟรชรายการ</button>
+        <div id="roomList"></div>
+    </div>
+    
+    <div id="message"></div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3300';
+
+        // กำหนดค่า axios เริ่มต้น
+        axios.defaults.baseURL = API_BASE_URL;
+        axios.defaults.timeout = 10000; // 10 วินาที
+        axios.defaults.headers.common['Content-Type'] = 'application/json';
+
+        // Interceptor สำหรับ request
+        axios.interceptors.request.use(
+            (config) => {
+                console.log(`Making ${config.method.toUpperCase()} request to: ${config.url}`);
+                return config;
+            },
+            (error) => {
+                return Promise.reject(error);
+            }
+        );
+
+        // Interceptor สำหรับ response
+        axios.interceptors.response.use(
+            (response) => {
+                return response;
+            },
+            (error) => {
+                console.error('API Error:', error);
+                if (error.code === 'ECONNABORTED') {
+                    showMessage("การเชื่อมต่อหมดเวลา กรุณาลองใหม่อีกครั้ง", true);
+                } else if (error.response) {
+                    showMessage(`เกิดข้อผิดพลาด: ${error.response.status} - ${error.response.statusText}`, true);
+                } else if (error.request) {
+                    showMessage("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้", true);
+                } else {
+                    showMessage("เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ", true);
+                }
+                return Promise.reject(error);
+            }
+        );
+
+        // Utility function to show messages
+        function showMessage(message, isError = false) {
+            const msgDiv = document.getElementById('message');
+            msgDiv.className = `message ${isError ? 'error' : 'success'}`;
+            msgDiv.textContent = message;
+            msgDiv.style.display = 'block';
+            setTimeout(() => {
+                msgDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Utility function to show loading
+        function showLoading(elementId) {
+            document.getElementById(elementId).innerHTML = '<div class="loading">กำลังโหลด...</div>';
+            document.getElementById(elementId).style.display = 'block';
+        }
+
+        // GET - ดูข้อมูลห้องพัก
+        async function getRooms() {
+            const roomId = document.getElementById('getRoomId').value;
+            const resultDiv = document.getElementById('getRooms');
+            
+            showLoading('getRooms');
+            
+            try {
+                let url = '/rooms';
+                if (roomId) {
+                    url += `/${roomId}`;
+                }
+                
+                const response = await axios.get(url);
+                const result = response.data;
+                
+                resultDiv.style.display = 'block';
+                
+                if (result.success) {
+                    if (roomId) {
+                        // Single room
+                        const room = result.data;
+                        resultDiv.innerHTML = `
+                            <div class="room-card ${!room.available ? 'unavailable' : ''}">
+                                <h4>ห้อง ${room.name}</h4>
+                                <img src="${room.image}" alt="Room ${room.name}" class="room-image" onerror="this.style.display='none'">
+                                <p><strong>รายละเอียด:</strong> ${room.detail}</p>
+                                <p><strong>ราคา:</strong> ${room.price} บาท/เดือน</p>
+                                <p><strong>สถานะ:</strong> <span style="color: ${room.available ? '#4caf50' : '#f44336'};">${room.available ? 'ว่าง' : 'ไม่ว่าง'}</span></p>
+                            </div>
+                        `;
+                    } else {
+                        // All rooms summary
+                        const rooms = result.data;
+                        const availableCount = rooms.filter(room => room.available).length;
+                        resultDiv.innerHTML = `
+                            <p><strong>จำนวนห้องทั้งหมด:</strong> ${result.count} ห้อง</p>
+                            <p><strong>ห้องว่าง:</strong> ${availableCount} ห้อง</p>
+                            <p><strong>ห้องไม่ว่าง:</strong> ${result.count - availableCount} ห้อง</p>
+                        `;
+                    }
+                } else {
+                    resultDiv.innerHTML = `<p style="color: #f44336;">${result.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: #f44336;">เกิดข้อผิดพลาด: ${error.message}</p>`;
+            }
+        }
+
+        // GET - ดูห้องที่ว่าง
+        async function getAvailableRooms() {
+            const resultDiv = document.getElementById('getRooms');
+            
+            showLoading('getRooms');
+            
+            try {
+                const response = await axios.get('/rooms/available');
+                const result = response.data;
+                
+                resultDiv.style.display = 'block';
+                
+                if (result.success) {
+                    if (result.data.length > 0) {
+                        let html = `<h4>ห้องว่าง (${result.count} ห้อง)</h4>`;
+                        result.data.forEach(room => {
+                            html += `
+                                <div class="room-card">
+                                    <strong>ห้อง ${room.name}</strong> - ${room.price} บาท/เดือน<br>
+                                    ${room.detail}
+                                </div>
+                            `;
+                        });
+                        resultDiv.innerHTML = html;
+                    } else {
+                        resultDiv.innerHTML = '<p>ไม่มีห้องว่างในขณะนี้</p>';
+                    }
+                } else {
+                    resultDiv.innerHTML = `<p style="color: #f44336;">${result.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: #f44336;">เกิดข้อผิดพลาด: ${error.message}</p>`;
+            }
+        }
+
+        // POST - เพิ่มห้องพักใหม่
+        async function addRoom() {
+            const name = document.getElementById('postRoomName').value;
+            const detail = document.getElementById('postRoomDetail').value;
+            const image = document.getElementById('postRoomImage').value;
+            const price = document.getElementById('postPrice').value;
+            const available = document.getElementById('postAvailable').value === 'true';
+            
+            if (!name || !detail || !image || !price) {
+                showMessage("กรุณากรอกข้อมูลให้ครบถ้วน", true);
+                return;
+            }
+            
+            try {
+                const response = await axios.post('/rooms', {
+                    name: name,
+                    detail: detail,
+                    image: image,
+                    price: parseFloat(price),
+                    available: available
+                });
+                
+                const result = response.data;
+                const resultDiv = document.getElementById('postResult');
+                
+                resultDiv.style.display = 'block';
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <p style="color: #4caf50;">${result.message}</p>
+                        <p>ห้อง: ${result.data.name} | ราคา: ${result.data.price} บาท/เดือน</p>
+                    `;
+                    
+                    // Clear form
+                    document.getElementById('postRoomName').value = '';
+                    document.getElementById('postRoomDetail').value = '';
+                    document.getElementById('postRoomImage').value = '';
+                    document.getElementById('postPrice').value = '';
+                    document.getElementById('postAvailable').value = 'true';
+                    
+                    showAllRooms();
+                    showMessage(result.message);
+                } else {
+                    resultDiv.innerHTML = `<p style="color: #f44336;">${result.message}</p>`;
+                    showMessage(result.message, true);
+                }
+            } catch (error) {
+                const resultDiv = document.getElementById('postResult');
+                resultDiv.style.display = 'block';
+                if (error.response && error.response.data) {
+                    resultDiv.innerHTML = `<p style="color: #f44336;">${error.response.data.message || 'เกิดข้อผิดพลาด'}</p>`;
+                }
+            }
+        }
+
+        // PUT - แก้ไขข้อมูลห้องพัก
+        async function updateRoom() {
+            const id = document.getElementById('putRoomId').value;
+            const name = document.getElementById('putRoomName').value;
+            const detail = document.getElementById('putRoomDetail').value;
+            const image = document.getElementById('putRoomImage').value;
+            const price = document.getElementById('putPrice').value;
+            const available = document.getElementById('putAvailable').value;
+            
+            if (!id) {
+                showMessage("กรุณากรอก ID ห้องพัก", true);
+                return;
+            }
+            
+            const updateData = {};
+            if (name) updateData.name = name;
+            if (detail) updateData.detail = detail;
+            if (image) updateData.image = image;
+            if (price) updateData.price = parseFloat(price);
+            if (available !== '') updateData.available = available === 'true';
+            
+            try {
+                const response = await axios.put(`/rooms/${id}`, updateData);
+                const result = response.data;
+                const resultDiv = document.getElementById('putResult');
+                
+                resultDiv.style.display = 'block';
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <p style="color: #4caf50;">${result.message}</p>
+                        <p>ห้อง: ${result.data.name} | ราคา: ${result.data.price} บาท/เดือน</p>
+                    `;
+                    showAllRooms();
+                    showMessage(result.message);
+                } else {
+                    resultDiv.innerHTML = `<p style="color: #f44336;">${result.message}</p>`;
+                    showMessage(result.message, true);
+                }
+            } catch (error) {
+                const resultDiv = document.getElementById('putResult');
+                resultDiv.style.display = 'block';
+                if (error.response && error.response.data) {
+                    resultDiv.innerHTML = `<p style="color: #f44336;">${error.response.data.message || 'เกิดข้อผิดพลาด'}</p>`;
+                }
+            }
+        }
+
+        // PATCH - เปลี่ยนสถานะห้อง
+        async function changeRoomStatus(available) {
+            const id = document.getElementById('patchRoomId').value;
+            
+            if (!id) {
+                showMessage("กรุณากรอก ID ห้องพัก", true);
+                return;
+            }
+            
+            try {
+                const response = await axios.patch(`/rooms/${id}/status`, { 
+                    available: available 
+                });
+                
+                const result = response.data;
+                const resultDiv = document.getElementById('patchResult');
+                
+                resultDiv.style.display = 'block';
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `<p style="color: #4caf50;">${result.message}</p>`;
+                    showAllRooms();
+                    showMessage(result.message);
+                } else {
+                    resultDiv.innerHTML = `<p style="color: #f44336;">${result.message}</p>`;
+                    showMessage(result.message, true);
+                }
+            } catch (error) {
+                const resultDiv = document.getElementById('patchResult');
+                resultDiv.style.display = 'block';
+                if (error.response && error.response.data) {
+                    resultDiv.innerHTML = `<p style="color: #f44336;">${error.response.data.message || 'เกิดข้อผิดพลาด'}</p>`;
+                }
+            }
+        }
+
+        // DELETE - ลบห้องพัก
+        async function deleteRoom() {
+            const id = document.getElementById('deleteRoomId').value;
+            
+            if (!id) {
+                showMessage("กรุณากรอก ID ห้องพัก", true);
+                return;
+            }
+            
+            if (!confirm('ต้องการลบห้องพักนี้หรือไม่?')) {
+                return;
+            }
+            
+            try {
+                const response = await axios.delete(`/rooms/${id}`);
+                const result = response.data;
+                const resultDiv = document.getElementById('deleteResult');
+                
+                resultDiv.style.display = 'block';
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `<p style="color: #4caf50;">${result.message}</p>`;
+                    document.getElementById('deleteRoomId').value = '';
+                    showAllRooms();
+                    showMessage(result.message);
+                } else {
+                    resultDiv.innerHTML = `<p style="color: #f44336;">${result.message}</p>`;
+                    showMessage(result.message, true);
+                }
+            } catch (error) {
+                const resultDiv = document.getElementById('deleteResult');
+                resultDiv.style.display = 'block';
+                if (error.response && error.response.data) {
+                    resultDiv.innerHTML = `<p style="color: #f44336;">${error.response.data.message || 'เกิดข้อผิดพลาด'}</p>`;
+                }
+            }
+        }
+
+        // แสดงรายการห้องทั้งหมด
+        async function showAllRooms() {
+            const roomListDiv = document.getElementById('roomList');
+            roomListDiv.innerHTML = '<div class="loading">กำลังโหลดรายการห้อง...</div>';
+            
+            try {
+                const response = await axios.get('/rooms');
+                const result = response.data;
+                
+                if (result.success && result.data.length > 0) {
+                    let html = '';
+                    result.data.forEach(room => {
+                        html += `
+                            <div class="room-card ${!room.available ? 'unavailable' : ''}">
+                                <h4>ID: ${room.id} | ห้อง ${room.name}</h4>
+                                <img src="${room.image}" alt="Room ${room.name}" class="room-image" onerror="this.style.display='none'">
+                                <p><strong>รายละเอียด:</strong> ${room.detail}</p>
+                                <p><strong>ราคา:</strong> ${room.price} บาท/เดือน</p>
+                                <p><strong>สถานะ:</strong> <span style="color: ${room.available ? '#4caf50' : '#f44336'}; font-weight: bold;">${room.available ? 'ว่าง' : 'ไม่ว่าง'}</span></p>
+                                <button onclick="fillUpdateForm(${room.id}, '${room.name}', \`${room.detail}\`, '${room.image}', ${room.price}, ${room.available})" style="margin-right: 10px;">แก้ไข</button>
+                                <button onclick="quickDelete(${room.id})" style="background-color: #f44336;">ลบ</button>
+                            </div>
+                        `;
+                    });
+                    roomListDiv.innerHTML = html;
+                } else if (result.success) {
+                    roomListDiv.innerHTML = '<p style="text-align: center;">ไม่มีข้อมูลห้องพัก</p>';
+                } else {
+                    roomListDiv.innerHTML = `<p style="color: #f44336;">${result.message}</p>`;
+                }
+            } catch (error) {
+                roomListDiv.innerHTML = '<p style="color: #f44336;">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
+            }
+        }
+
+        // ฟังก์ชันช่วยเหลือ
+        function fillUpdateForm(id, name, detail, image, price, available) {
+            document.getElementById('putRoomId').value = id;
+            document.getElementById('putRoomName').value = name;
+            document.getElementById('putRoomDetail').value = detail;
+            document.getElementById('putRoomImage').value = image;
+            document.getElementById('putPrice').value = price;
+            document.getElementById('putAvailable').value = available.toString();
+            
+            // Scroll to update section
+            document.querySelector('#putRoomId').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function quickDelete(id) {
+            if (confirm('ต้องการลบห้องพักนี้หรือไม่?')) {
+                document.getElementById('deleteRoomId').value = id;
+                await deleteRoom();
+            }
+        }
+
+        // Health check สำหรับตรวจสอบการเชื่อมต่อ API
+        async function checkAPIConnection() {
+            try {
+                const response = await axios.get('/health');
+                const result = response.data;
+                if (result.success) {
+                    console.log('API connection successful');
+                    showMessage("เชื่อมต่อ API Server สำเร็จ");
+                }
+            } catch (error) {
+                console.error('API connection failed:', error);
+                showMessage("ไม่สามารถเชื่อมต่อกับ API Server ได้ กรุณาตรวจสอบว่า Server ทำงานอยู่ที่ port 3300", true);
+            }
+        }
+
+        // โหลดข้อมูลเริ่มต้น
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAPIConnection();
+            showAllRooms();
+        });
+    </script>
+</body>
+</html>
